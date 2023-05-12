@@ -1,0 +1,8 @@
+﻿COSAS POR HACER
+- Favoritos OK pero me gustaria que tambien se pudiese borrar desde Index y que no haga refresh
+- Login
+- Chat
+- Detalles del Artista OK pero implementar los seguidores y los favoritos
+- Mi Perfil Cliente
+- Que un Artista pueda subir su producto
+- Implementar un IRepository (Interface)

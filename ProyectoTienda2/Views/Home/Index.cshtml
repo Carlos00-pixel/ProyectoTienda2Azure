@@ -1,0 +1,77 @@
+﻿@model DatosArtista
+
+@{
+    List<int> favoritos =
+                        Context.Session.GetObject<List<int>>("FAVORITOS");
+}
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 border-2 border-gray-200 border-dashed rounded-lg dark:border-gray-700">
+        <div class="text-center p-4">
+            <img style="margin: 0 auto;" class="display-4" width="450px" height="150px" src="images/MakeArt_Logo.png" />
+            
+            @foreach(InfoProducto info in Model.listaProductos)
+            {
+                <div class="max-w-screen-xl mx-auto p-5 sm:p-10 md:p-16">
+                    <div style="width: 500px; margin: 0 auto; text-align: center;">
+                        <div class="rounded overflow-hidden shadow-lg">
+                            <a asp-controller="Home" asp-action="Details" asp-route-idproducto="@info.IdInfoArte">
+                                <div class="relative">
+                                    <img src="@info.Imagen" style="width: 500px;height: 500px;">
+                                    <div class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25"></div>
+                                    <a asp-controller="Artista" asp-action="DetallesArtista" asp-route-idartista="@info.IdArtista">
+                                        <div class="absolute bottom-0 left-0 bg-indigo-600 px-4 py-2 text-white text-sm hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+                                            @info.Nick
+                                        </div>
+                                    </a>
+                                    @if(favoritos == null)
+                                    {
+                                        <a asp-controller="Home" asp-action="Index" asp-route-idfavorito="@info.IdInfoArte">
+                                            <div class="text-sm absolute top-0 right-0 rounded-full flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+                                                <svg style="margin: 0 auto;" id="favorito" aria-hidden="true" class="classSVG absolute top-0 right-0 bg-indigo-600 text-white rounded-full flex-shrink-0 w-10 h-10 text-gray-900 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"></path>
+                                                </svg>
+                                            </div>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        if (favoritos.Contains(info.IdInfoArte))
+                                        {
+                                            <a asp-controller="Home" asp-action="Index" asp-route-ideliminar="@info.IdInfoArte">
+                                                <div class="text-sm absolute top-0 right-0 rounded-full flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+                                                    <svg style="margin: 0 auto;" id="favorito" aria-hidden="true" class="absolute top-0 right-0 bg-indigo-600 text-white rounded-full flex-shrink-0 w-10 h-10 text-gray-900 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white hover:text-gray-900" fill="yellow" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"></path>
+                                                    </svg>
+                                                </div>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Home" asp-action="Index" asp-route-idfavorito="@info.IdInfoArte">
+                                                <div class="text-sm absolute top-0 right-0 rounded-full flex flex-col items-center justify-center mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+                                                    <svg style="margin: 0 auto;" id="favorito" aria-hidden="true" class="classSVG absolute top-0 right-0 bg-indigo-600 text-white rounded-full flex-shrink-0 w-10 h-10 text-gray-900 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"></path>
+                                                    </svg>
+                                                </div>
+                                            </a>
+                                        }
+                                    }
+                                    
+                                </div>
+                            </a>
+                            <div class="px-6 py-4">
+                                <a asp-controller="Home" asp-action="Details" asp-route-idproducto="@info.IdInfoArte" class="font-semibold text-lg inline-block hover:text-indigo-600 transition duration-500 ease-in-out">
+                                    @info.Titulo
+                                </a>
+                                <br>
+                                <br>
+                                <h2 class="font-awesome text-2xl inline-block"><b>@info.Precio €</b></h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

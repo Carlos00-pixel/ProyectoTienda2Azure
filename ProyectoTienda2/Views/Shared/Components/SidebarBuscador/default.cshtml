@@ -1,0 +1,124 @@
+﻿@model DatosArtista
+
+<!-- Search panel -->
+<!-- Backdrop -->
+<div x-transition:enter="transition duration-300 ease-in-out"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition duration-300 ease-in-out"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     x-show="isSearchPanelOpen"
+     @@click="isSearchPanelOpen = false"
+     class="fixed inset-0 z-10 bg-indigo-800"
+     style="opacity: 0.5"
+     aria-hidden="ture"></div>
+<!-- Panel -->
+<section x-transition:enter="transition duration-300 ease-in-out transform sm:duration-500"
+         x-transition:enter-start="-translate-x-full"
+         x-transition:enter-end="translate-x-0"
+         x-transition:leave="transition duration-300 ease-in-out transform sm:duration-500"
+         x-transition:leave-start="translate-x-0"
+         x-transition:leave-end="-translate-x-full"
+         x-show="isSearchPanelOpen"
+         @@keydown.escape="isSearchPanelOpen = false"
+         class="fixed inset-y-0 z-20 w-full max-w-xs bg-white shadow-xl dark:bg-darker dark:text-light sm:max-w-md focus:outline-none">
+    <div class="absolute right-0 p-2 transform translate-x-full">
+        <!-- Close button -->
+        <button @@click="isSearchPanelOpen = false" class="p-2 text-white rounded-md focus:outline-none focus:ring">
+            <svg class="w-5 h-5"
+                 xmlns="http://www.w3.org/2000/svg"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <h2 class="sr-only">Search panel</h2>
+    <!-- Panel content -->
+    <div class="flex flex-col h-screen">
+        <!-- Panel header (Search input) -->
+        <div class="relative flex-shrink-0 px-4 py-8 text-gray-400 border-b dark:border-indigo-800 dark:focus-within:text-light focus-within:text-gray-700">
+            <span class="absolute inset-y-0 inline-flex items-center px-4">
+                <svg class="w-5 h-5"
+                     xmlns="http://www.w3.org/2000/svg"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </span>
+            <form asp-controller="SidebarBuscador" asp-action="default">
+            <input name="buscar"
+                   x-ref="searchInput"
+                   type="text"
+                   class="w-full py-2 pl-10 pr-4 border rounded-full dark:bg-dark dark:border-transparent dark:text-light focus:outline-none focus:ring"
+                   placeholder="Buscar..." />
+            <button type="submit" value="Buscar"></button>
+            </form>
+        </div>
+        <div class="flex-1 px-4 pb-4 space-y-4">
+            <ul id="resultado" class="max-w-md divide-y divide-gray-200 dark:divide-gray-700">
+                @foreach(Artista art in Model.listaArtistas)
+                {
+                    <li class="py-3 sm:py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0">
+                                <img class="w-8 h-8 rounded-full" src="@art.Imagen">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate dark:text-white">
+                                    @art.Nick
+                                </p>
+                            </div>
+                            <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                                <a asp-controller="Artista" asp-action="DetallesArtista" asp-route-idartista="@art.IdArtista">
+                                    <svg class="w-5 h-5"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3">
+                                        </path>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</section>
+
+<script type="text/javascript">
+    function BuscarArtista(event, listaArtistas) {
+        alert(event.target.value);
+        //event.addEventListener("input", () => {
+        //    listaArtistas.length = 0;
+        //    let fragment = document.createDocumentFragment();
+        //    let valor = event.value;
+        //    if(valor.length > 0){
+        //        json.forEach(j => {
+        //            if(j.nick.includes(valor)){
+        //                listaArtistas.push(j.nick);
+        //            }
+        //        });
+        //        listaArtistas.forEach(s => {
+        //            let p = document.createElement("p");
+        //            p.innerHTML = s;
+        //            fragment.appendChild(p);
+        //        });
+        //        resultado.innerHTML = "";
+        //        resultado.appendChild(fragment);
+        //    }
+        //});
+    }
+</script>
