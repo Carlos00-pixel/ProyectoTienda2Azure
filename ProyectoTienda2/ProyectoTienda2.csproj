@@ -39,12 +39,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.16.0" />
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.14.0" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9" />
     <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.14" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.14" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="PyoyectoNugetTienda" Version="1.0.1" />
+    <PackageReference Include="PyoyectoNugetTienda" Version="1.0.5" />
   </ItemGroup>
 
 </Project>

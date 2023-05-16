@@ -1,3 +1,4 @@
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using ProyectoTienda2.Data;
@@ -6,13 +7,18 @@ using ProyectoTienda2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+string azureKeys = builder.Configuration.GetValue<string>("AzureKeys:StorageAccount");
+BlobServiceClient blobServiceClient = new BlobServiceClient(azureKeys);
+builder.Services.AddTransient<BlobServiceClient>(x => blobServiceClient);
+
 // Add services to the container.
-//string connectionString = builder.Configuration.GetConnectionString("SqlProyectoTiendaAzure");
-builder.Services.AddTransient<RepositoryCliente>();
-builder.Services.AddTransient<RepositoryArtista>();
+string connectionString = builder.Configuration.GetConnectionString("SqlProyectoTiendaAzure");
+//builder.Services.AddTransient<RepositoryCliente>();
+//builder.Services.AddTransient<RepositoryArtista>();
 //builder.Services.AddTransient<RepositoryInfoArte>();
 builder.Services.AddTransient<ServiceApi>();
-//builder.Services.AddDbContext<ProyectoTiendaContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddTransient<ServiceStorageBlobs>();
+builder.Services.AddDbContext<ProyectoTiendaContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddSession(options =>
 {
@@ -37,6 +43,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddControllersWithViews(options =>
 options.EnableEndpointRouting = false)
     .AddSessionStateTempDataProvider();
+
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

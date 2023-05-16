@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using ProyectoTienda2.Repositories;
+using ProyectoTienda2.Services;
 using PyoyectoNugetTienda;
 using System.Security.Claims;
 
@@ -9,13 +11,14 @@ namespace ProyectoTienda2.Controllers
 {
     public class ManagedController : Controller
     {
-        private RepositoryCliente repoClient;
-        private RepositoryArtista repoArtist;
+        private ServiceApi service;
+        private ServiceStorageBlobs serviceBlob;
+        private string containerName = "proyectotienda";
 
-        public ManagedController(RepositoryCliente repoClient, RepositoryArtista repoArtist)
+        public ManagedController(ServiceApi service, ServiceStorageBlobs serviceBlob)
         {
-            this.repoClient = repoClient;
-            this.repoArtist = repoArtist;
+            this.service = service;
+            this.serviceBlob = serviceBlob;
         }
 
         #region CLIENTE
@@ -30,7 +33,7 @@ namespace ProyectoTienda2.Controllers
             , string password)
         {
             Cliente cliente =
-                await this.repoClient.ExisteCliente(email, password);
+                await this.service.ExisteCliente(email, password);
             if (cliente != null)
             {
                 ClaimsIdentity identity =
@@ -54,6 +57,27 @@ namespace ProyectoTienda2.Controllers
                 await HttpContext.SignInAsync
                     (CookieAuthenticationDefaults.AuthenticationScheme
                     , user);
+
+                string blobName = cliente.Imagen;
+                if (blobName != null)
+                {
+                    BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(containerName);
+                    BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+
+                    BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                    {
+                        BlobContainerName = this.containerName,
+                        BlobName = blobName,
+                        Resource = "b",
+                        StartsOn = DateTimeOffset.UtcNow,
+                        ExpiresOn = DateTime.UtcNow.AddHours(1),
+                    };
+
+                    sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                    var uri = blobClient.GenerateSasUri(sasBuilder);
+                    ViewData["URI"] = uri;
+                }
+
                 return RedirectToAction("Index", "Home");
             }
             else
@@ -70,10 +94,15 @@ namespace ProyectoTienda2.Controllers
 
         [HttpPost]
         public async Task<IActionResult> RegisterCliente
-            (string nombre, string apellidos, string email, string password, string imagen)
+            (string nombre, string apellidos, string email, string password, IFormFile file)
         {
-            await this.repoClient.RegistrarClienteAsync
-                (nombre, apellidos, email, password, imagen);
+            string blobName = file.FileName;
+            using (Stream stream = file.OpenReadStream())
+            {
+                await this.serviceBlob.UploadBlobAsync(this.containerName, blobName, stream);
+            }
+            await this.service.RegistrarClienteAsync
+                (nombre, apellidos, email, password, blobName);
             ViewData["MENSAJE"] = "Usuario registrado correctamente";
             return View();
         }
@@ -91,8 +120,9 @@ namespace ProyectoTienda2.Controllers
         public async Task<IActionResult> LoginArtista(string email
             , string password)
         {
+
             Artista artista =
-                await this.repoArtist.ExisteArtista(email, password);
+            await this.service.ExisteArtista(email, password);
             if (artista != null)
             {
                 ClaimsIdentity identity =
@@ -141,11 +171,17 @@ namespace ProyectoTienda2.Controllers
         [HttpPost]
         public async Task<IActionResult> RegisterArtista
             (string nombre, string apellidos, string nick, string descripcion,
-            string email, string password, string imagen)
+            string email, string password, IFormFile file)
         {
-            await this.repoArtist.RegistrarArtistaAsync
+            string blobName = file.FileName;
+
+            using (Stream stream = file.OpenReadStream())
+            {
+                await this.serviceBlob.UploadBlobAsync(this.containerName, blobName, stream);
+            }
+            await this.service.RegistrarArtistaAsync
                 (nombre, apellidos, nick, descripcion,
-                email, password, imagen);
+                email, password, blobName);
             ViewData["MENSAJE"] = "Usuario registrado correctamente";
             return View();
         }

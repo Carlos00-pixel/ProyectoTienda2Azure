@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using ProyectoTienda2.Filters;
 using ProyectoTienda2.Repositories;
+using ProyectoTienda2.Services;
 using PyoyectoNugetTienda;
 using System.Drawing;
 using System.Security.Claims;
@@ -10,44 +14,40 @@ namespace ProyectoTienda2.Controllers
 {
     public class ArtistaController : Controller
     {
-        private RepositoryArtista repo;
-        private IMemoryCache _cache;
+        private ServiceApi service;
+        private ServiceStorageBlobs serviceBlob;
+        private string containerName = "proyectotienda";
 
-        public ArtistaController(RepositoryArtista repo, IMemoryCache _cache)
+        public ArtistaController(ServiceApi service, ServiceStorageBlobs serviceBlob)
         {
-            this.repo = repo;
-            this._cache = _cache;
+            this.service = service;
+            this.serviceBlob = serviceBlob;
         }
 
-        public IActionResult DetallesArtista(int idartista)
+        public async Task<IActionResult> DetallesArtista(int idartista)
         {
-            //string cacheKey = "IMAGEN";
-            //if (!_cache.TryGetValue(cacheKey, out string imageUrl))
-            //{
-            //    // La URL de la imagen no existe en la caché, carga la URL de la imagen y guárdala en caché.
-            //    imageUrl = HttpContext.Session.GetString("imagenDeFondo");
-            //    _cache.Set(cacheKey, imageUrl);
-            //}
 
-            //ViewData["IMAGENFONDO"] = imageUrl;
-
-            //string imagenDeFondo = HttpContext.Session.GetString("imagenDeFondo");
-            //if (this._cache.Get("IMAGEN") == null)
-            //{
-            //    this._cache.Set("IMAGEN", imagenDeFondo);
-            //    ViewData["IMAGENFONDO"] = this._cache.Get("IMAGEN");
-            //}
-            //else
-            //{
-            //    imagenDeFondo = this._cache.Get<string>("IMAGEN");
-            //    ViewData["IMAGENFONDO"] = imagenDeFondo;
-            //}
-
-            var imagenDeFondo = HttpContext.Session.GetString("imagenDeFondo");
-            ViewData["IMAGENFONDO"] = imagenDeFondo;
-
-            DatosArtista artista = this.repo.DetailsArtista(idartista);
+            DatosArtista artista = await this.service.DetailsArtistaAsync(idartista);
             ViewData["CONTARPRODUCT"] = artista.listaProductos.Count;
+            string blobName = HttpContext.User.FindFirst("Imagen").Value;
+            if (blobName != null)
+            {
+                BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(containerName);
+                BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+
+                BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                {
+                    BlobContainerName = containerName,
+                    BlobName = blobName,
+                    Resource = "b",
+                    StartsOn = DateTimeOffset.UtcNow,
+                    ExpiresOn = DateTime.UtcNow.AddHours(1),
+                };
+
+                sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                var uri = blobClient.GenerateSasUri(sasBuilder);
+                ViewData["URI"] = uri;
+            }
             return View(artista);
         }
 
@@ -57,39 +57,88 @@ namespace ProyectoTienda2.Controllers
 
             if (idInfoArteEliminado != null)
             {
-                await this.repo.DeleteInfoArteAsync(idInfoArteEliminado.Value);
+                await this.service.DeleteInfoArteAsync(idInfoArteEliminado.Value);
             }
 
-            artista = this.repo.DetailsArtista(idartista);
+            artista = await this.service.DetailsArtistaAsync(idartista);
             ViewData["CONTARPRODUCT"] = artista.listaProductos.Count;
+
+            string blobImagenArtist = HttpContext.User.FindFirst("Imagen").Value;
+            if (blobImagenArtist != null)
+            {
+                BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(this.containerName);
+                BlobClient blobClient = blobContainerClient.GetBlobClient(blobImagenArtist);
+
+                BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                {
+                    BlobContainerName = this.containerName,
+                    BlobName = blobImagenArtist,
+                    Resource = "a",
+                    StartsOn = DateTimeOffset.UtcNow,
+                    ExpiresOn = DateTime.UtcNow.AddHours(1),
+                };
+
+                sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                var uri = blobClient.GenerateSasUri(sasBuilder);
+                ViewData["URI"] = uri;
+            }
+
+            //foreach (InfoProducto c in artista.listaProductos)
+            //{
+            //    string blobName = c.Imagen;
+            //    if (blobName != null)
+            //    {
+            //        BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(this.containerName);
+            //        BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+
+            //        BlobSasBuilder sasBuilder = new BlobSasBuilder()
+            //        {
+            //            BlobContainerName = this.containerName,
+            //            BlobName = blobName ,
+            //            Resource = "b",
+            //            StartsOn = DateTimeOffset.UtcNow,
+            //            ExpiresOn = DateTime.UtcNow.AddHours(1),
+            //        };
+
+            //        sasBuilder.SetPermissions(BlobSasPermissions.Read);
+            //        var uri = blobClient.GenerateSasUri(sasBuilder);
+            //        c.Imagen = uri.ToString();
+            //    }
+            //}
 
             return View(artista);
         }
 
-        public IActionResult EditarPerfilArtista(int idartista)
+        public async Task<IActionResult> EditarPerfilArtista(int idartista)
         {
-            DatosArtista artista = this.repo.DetailsArtista(idartista);
+            DatosArtista artista = await this.service.DetailsArtistaAsync(idartista);
             return View(artista);
         }
 
         [HttpPost]
         public async Task<IActionResult> EditarPerfilArtista
             (int idartista, string nombre, string apellidos, string nick, string descripcion,
-            string email, string imagen)
+            string email, IFormFile file)
         {
+            string blobName = file.FileName;
+            using (Stream stream = file.OpenReadStream())
+            {
+                await this.serviceBlob.UploadBlobAsync(this.containerName, blobName, stream);
+            }
             idartista = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            await this.repo.PerfilArtista
+            await this.service.PerfilArtista
                 (idartista, nombre, apellidos, nick, descripcion,
-                email, imagen);
-            DatosArtista datosArtista = new DatosArtista();
+                email, blobName);
 
             return View("PerfilArtista", new { idartista = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value) });
         }
 
-        public async Task<IActionResult> Delete(int idInfoArte)
-        {
-            await this.repo.DeleteInfoArteAsync(idInfoArte);
-            return View("PerfilArtista", new { idartista = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value) });
-        }
+        //[AuthorizeUsuarios]
+        //public async Task<IActionResult> Delete(int idInfoArte)
+        //{
+        //    string token = HttpContext.Session.GetString("TOKEN");
+        //    await this.service.DeleteInfoArteAsync(idInfoArte);
+        //    return View("PerfilArtista", new { idartista = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value) });
+        //}
     }
 }

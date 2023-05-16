@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
+using Microsoft.AspNetCore.Mvc;
 using ProyectoTienda2.Extensions;
 using ProyectoTienda2.Filters;
 using ProyectoTienda2.Repositories;
 using ProyectoTienda2.Services;
 using PyoyectoNugetTienda;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -13,15 +16,16 @@ namespace ProyectoTienda2.Controllers
     {
         private readonly ILogger<HomeController> _logger;
 
-        private RepositoryInfoArte repo;
         private ServiceApi service;
-
+        private ServiceStorageBlobs serviceBlob;
+        private string containerName = "proyectotienda";
         public HomeController
-            (ILogger<HomeController> logger, RepositoryInfoArte repo, ServiceApi service)
+            (ILogger<HomeController> logger, ServiceApi service,
+            ServiceStorageBlobs serviceBlob)
         {
             _logger = logger;
-            this.repo = repo;
             this.service = service;
+            this.serviceBlob = serviceBlob;
         }
 
         public async Task<IActionResult> Index(int? idfavorito)
@@ -40,12 +44,34 @@ namespace ProyectoTienda2.Controllers
                 favoritos.Add(idfavorito.Value);
                 HttpContext.Session.SetObject("FAVORITOS", favoritos);
             }
-            List<DatosArtista> infoArtes = await this.service.GetInfoArteAsync();
+            DatosArtista infoArtes = await this.service.GetInfoArteAsync();
+            foreach (InfoProducto c in infoArtes.listaProductos)
+            {
+                string blobName = c.Imagen;
+                if (blobName != null)
+                {
+                    BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(this.containerName);
+                    BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+
+                    BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                    {
+                        BlobContainerName = this.containerName,
+                        BlobName = blobName,
+                        Resource = "b",
+                        StartsOn = DateTimeOffset.UtcNow,
+                        ExpiresOn = DateTime.UtcNow.AddHours(1),
+                    };
+
+                    sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                    var uri = blobClient.GenerateSasUri(sasBuilder);
+                    c.Imagen = uri.ToString();
+                }
+            }
             return View(infoArtes);
         }
 
         [AuthorizeUsuarios]
-        public IActionResult ProductosFavoritos(int? ideliminar)
+        public async Task<IActionResult> ProductosFavoritos(int? ideliminar)
         {
             List<int> idsFavoritos =
                 HttpContext.Session.GetObject<List<int>>("FAVORITOS");
@@ -69,6 +95,28 @@ namespace ProyectoTienda2.Controllers
                     }
                 }
                 DatosArtista infoArtes = this.service.GetInfoArteSession(idsFavoritos);
+                foreach (InfoProducto c in infoArtes.listaProductos)
+                {
+                    string blobName = c.Imagen;
+                    if (blobName != null)
+                    {
+                        BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(this.containerName);
+                        BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+
+                        BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                        {
+                            BlobContainerName = this.containerName,
+                            BlobName = blobName,
+                            Resource = "b",
+                            StartsOn = DateTimeOffset.UtcNow,
+                            ExpiresOn = DateTime.UtcNow.AddHours(1),
+                        };
+
+                        sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                        var uri = blobClient.GenerateSasUri(sasBuilder);
+                        c.Imagen = uri.ToString();
+                    }
+                }
                 return View(infoArtes);
             }
         }
@@ -76,6 +124,27 @@ namespace ProyectoTienda2.Controllers
         public async Task<IActionResult> Details(int idproducto)
         {
             DatosArtista infoProduct = await this.service.FindInfoArteAsync(idproducto);
+
+            string blobName = infoProduct.infoProducto.Imagen;
+            if (blobName != null)
+            {
+                BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(this.containerName);
+                BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+
+                BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                {
+                    BlobContainerName = this.containerName,
+                    BlobName = blobName,
+                    Resource = "b",
+                    StartsOn = DateTimeOffset.UtcNow,
+                    ExpiresOn = DateTime.UtcNow.AddHours(1),
+                };
+
+                sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                var uri = blobClient.GenerateSasUri(sasBuilder);
+                infoProduct.infoProducto.Imagen = uri.ToString();
+            }
+
             return View(infoProduct);
         }
 
@@ -86,11 +155,17 @@ namespace ProyectoTienda2.Controllers
 
         [HttpPost]
         public async Task<IActionResult> NuevoProducto
-            (string titulo, int precio, string descripcion, string imagen, int idartista)
+            (string titulo, int precio, string descripcion, IFormFile file, int idartista)
         {
+            string blobName = file.FileName;
+            using (Stream stream = file.OpenReadStream())
+            {
+                await this.serviceBlob.UploadBlobAsync(this.containerName, blobName, stream);
+            }
+
             idartista = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            await this.service.AgregarProductoAsync(titulo, precio, descripcion, imagen, idartista);
+            await this.service.AgregarProductoAsync(titulo, precio, descripcion, blobName, idartista);
             return RedirectToAction("Index");
         }
 

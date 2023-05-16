@@ -32,8 +32,15 @@ namespace ProyectoTienda2.Filters
 
             if (user.Identity.IsAuthenticated == false)
             {
-                context.Result = GetRoute("Managed", "LoginCliente");
+                RouteValueDictionary routeLogin =
+                    new RouteValueDictionary(new
+                    {
+                        controller = "Managed",
+                        action = "LoginArtista"
+                    });
+                context.Result = new RedirectToRouteResult(routeLogin);
             }
+
         }
 
         private RedirectToRouteResult GetRoute(string controller, string action)
