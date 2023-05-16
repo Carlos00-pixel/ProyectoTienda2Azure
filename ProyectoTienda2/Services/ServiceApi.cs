@@ -204,13 +204,14 @@ namespace ProyectoTienda2.Services
 
         public async Task RegistrarArtistaAsync
             (string nombre, string apellidos, string nick, string descripcion,
-            string email, string password, string imagen)
+            string email, string password, string imagen, string imagenfondo)
         {
             using (HttpClient client = new HttpClient())
             {
                 string request = "/api/Managed/RegisterArtista/"
                     + nombre + "/" + apellidos + "/" + nick + "/"
-                    + descripcion + "/" + email + "/" + password + "/" + imagen;
+                    + descripcion + "/" + email + "/" + password + "/" + imagen
+                    + "/" + imagenfondo;
                 client.BaseAddress = new Uri(this.UrlApiProyectoTienda);
                 client.DefaultRequestHeaders.Clear();
                 client.DefaultRequestHeaders.Accept.Add(this.Header);
@@ -224,6 +225,7 @@ namespace ProyectoTienda2.Services
                 artist.Password =
                     HelperCryptography.EncryptPassword(password, artist.Salt);
                 artist.Imagen = imagen;
+                artist.ImagenFondo = imagenfondo;
 
                 string json = JsonConvert.SerializeObject(artist);
 
@@ -291,6 +293,30 @@ namespace ProyectoTienda2.Services
             DatosArtista producto =
                 await this.CallApiAsync<DatosArtista>(request);
             return producto;
+        }
+
+        public async Task CambiarImagenFondoAsync(int idartista, string imagenfondo)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                string request = "/api/Artista/CambiarImagenFondo/" + idartista + "/"
+                    + imagenfondo;
+                client.BaseAddress = new Uri(this.UrlApiProyectoTienda);
+                client.DefaultRequestHeaders.Clear();
+                client.DefaultRequestHeaders.Accept.Add(this.Header);
+
+                DatosArtista artista = new DatosArtista();
+
+                artista = await this.DetailsArtistaAsync(idartista);
+                artista.artista.ImagenFondo = imagenfondo;
+
+                string json = JsonConvert.SerializeObject(artista);
+
+                StringContent content =
+                    new StringContent(json, Encoding.UTF8, "application/json");
+                HttpResponseMessage response =
+                    await client.PutAsync(request, content);
+            }
         }
         #endregion
         #region CLIENTES

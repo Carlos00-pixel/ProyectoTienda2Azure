@@ -48,8 +48,10 @@ namespace ProyectoTienda2.Controllers
                     (new Claim("Nombre", cliente.Nombre));
                 identity.AddClaim
                     (new Claim("Apellidos", cliente.Apellidos));
+
+               string imagenPerfil = await this.serviceBlob.GetBlobAsync(this.containerName, cliente.Imagen);
                 identity.AddClaim
-                    (new Claim("Imagen", cliente.Imagen));
+                    (new Claim("Imagen", imagenPerfil));
                 identity.AddClaim
                     (new Claim(ClaimTypes.Role, "Cliente"));
 
@@ -57,27 +59,6 @@ namespace ProyectoTienda2.Controllers
                 await HttpContext.SignInAsync
                     (CookieAuthenticationDefaults.AuthenticationScheme
                     , user);
-
-                string blobName = cliente.Imagen;
-                if (blobName != null)
-                {
-                    BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(containerName);
-                    BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
-
-                    BlobSasBuilder sasBuilder = new BlobSasBuilder()
-                    {
-                        BlobContainerName = this.containerName,
-                        BlobName = blobName,
-                        Resource = "b",
-                        StartsOn = DateTimeOffset.UtcNow,
-                        ExpiresOn = DateTime.UtcNow.AddHours(1),
-                    };
-
-                    sasBuilder.SetPermissions(BlobSasPermissions.Read);
-                    var uri = blobClient.GenerateSasUri(sasBuilder);
-                    ViewData["URI"] = uri;
-                }
-
                 return RedirectToAction("Index", "Home");
             }
             else
@@ -145,8 +126,9 @@ namespace ProyectoTienda2.Controllers
                     identity.AddClaim
                     (new Claim("Apellidos", artista.Apellidos));
                 }
+                string imagenPerfil = await this.serviceBlob.GetBlobAsync(this.containerName, artista.Imagen);
                 identity.AddClaim
-                    (new Claim("Imagen", artista.Imagen));
+                    (new Claim("Imagen", imagenPerfil));
                 identity.AddClaim
                     (new Claim(ClaimTypes.Role, "Artista"));
 
@@ -154,6 +136,25 @@ namespace ProyectoTienda2.Controllers
                 await HttpContext.SignInAsync
                     (CookieAuthenticationDefaults.AuthenticationScheme
                     , user);
+                string blobName = artista.Imagen;
+                if (blobName != null)
+                {
+                    BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(containerName);
+                    BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+
+                    BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                    {
+                        BlobContainerName = this.containerName,
+                        BlobName = blobName,
+                        Resource = "b",
+                        StartsOn = DateTimeOffset.UtcNow,
+                        ExpiresOn = DateTime.UtcNow.AddHours(1),
+                    };
+
+                    sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                    var uri = blobClient.GenerateSasUri(sasBuilder);
+                    ViewData["URI"] = uri;
+                }
                 return RedirectToAction("Index", "Home");
             }
             else
@@ -171,7 +172,7 @@ namespace ProyectoTienda2.Controllers
         [HttpPost]
         public async Task<IActionResult> RegisterArtista
             (string nombre, string apellidos, string nick, string descripcion,
-            string email, string password, IFormFile file)
+            string email, string password, IFormFile file, string imagenfondo)
         {
             string blobName = file.FileName;
 
@@ -179,9 +180,10 @@ namespace ProyectoTienda2.Controllers
             {
                 await this.serviceBlob.UploadBlobAsync(this.containerName, blobName, stream);
             }
+            imagenfondo = "default.jpg";
             await this.service.RegistrarArtistaAsync
                 (nombre, apellidos, nick, descripcion,
-                email, password, blobName);
+                email, password, blobName, imagenfondo);
             ViewData["MENSAJE"] = "Usuario registrado correctamente";
             return View();
         }

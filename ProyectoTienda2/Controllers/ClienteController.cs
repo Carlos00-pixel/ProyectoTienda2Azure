@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
-using ProyectoTienda2.Repositories;
 using System.Numerics;
 using System.Security.Claims;
 using static System.Net.Mime.MediaTypeNames;
@@ -30,35 +29,18 @@ namespace ProyectoTienda2.Controllers
 
             DatosArtista cliente = await this.service.FindCliente(idcliente);
 
-            string blobName = cliente.cliente.Imagen;
-            if (blobName != null)
-            {
-                BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(containerName);
-                BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+            ViewData["PERFIL"] = await this.serviceBlob.GetBlobAsync(this.containerName, cliente.cliente.Imagen);
 
-                BlobSasBuilder sasBuilder = new BlobSasBuilder()
-                {
-                    BlobContainerName = containerName,
-                    BlobName = blobName,
-                    Resource = "b",
-                    StartsOn = DateTimeOffset.UtcNow,
-                    ExpiresOn = DateTime.UtcNow.AddHours(1),
-                };
-
-                sasBuilder.SetPermissions(BlobSasPermissions.Read);
-                var uri = blobClient.GenerateSasUri(sasBuilder);
-                ViewData["URI"] = uri;
-            }
             return View(cliente);
         }
 
         public async Task<IActionResult> EditarCliente(int idcliente)
         {
             DatosArtista cliente = new DatosArtista();
-
             idcliente = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             cliente = await this.service.FindCliente(idcliente);
+            ViewData["PERFIL"] = await this.serviceBlob.GetBlobAsync(this.containerName, cliente.cliente.Imagen);
             return View(cliente);
         }
 

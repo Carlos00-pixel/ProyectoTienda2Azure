@@ -8,7 +8,7 @@
         <section class="relative block h-500-px">
             
             <div id="background" class="absolute top-0 w-full h-full bg-center bg-cover" style="
-              background-image: url('https://images.unsplash.com/photo-1499336315816-097655dcfbda?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=crop&amp;w=2710&amp;q=80');
+              background-image: url('@ViewData["FOTOFONDO"]');
               ">
                 <span id="blackOverlay" class="w-full h-full absolute opacity-50 bg-black"></span>
                 
@@ -18,42 +18,42 @@
                         <path clip-rule="evenodd" fill-rule="evenodd" d="M1 8a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 018.07 3h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0016.07 6H17a2 2 0 012 2v7a2 2 0 01-2 2H3a2 2 0 01-2-2V8zm13.5 3a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM10 14a3 3 0 100-6 3 3 0 000 6z"></path>
                     </svg>
                 </button>
+                <form method="post" enctype="multipart/form-data">
+                    <!-- Contenedor del pop-up (inicialmente oculto) -->
+                    <div id="miPopup" class="fixed z-10 inset-0 overflow-y-auto hidden">
+                      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <!-- Fondo oscuro detrás del pop-up -->
+                        <div class="fixed inset-0 transition-opacity">
+                          <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                        </div>
 
-                <!-- Contenedor del pop-up (inicialmente oculto) -->
-                <div id="miPopup" class="fixed z-10 inset-0 overflow-y-auto hidden">
-                  <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                    <!-- Fondo oscuro detrás del pop-up -->
-                    <div class="fixed inset-0 transition-opacity">
-                      <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-                    </div>
+                        <!-- Contenedor principal del pop-up -->
+                        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                          <!-- Encabezado del pop-up -->
+                          <div class="bg-gray-200 px-4 py-3 border-b border-gray-300">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Ingrese una imagen de fondo</h3>
+                          </div>
+                            <!-- Cuerpo del pop-up -->
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <!-- Input para ingresar el nombre -->
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Cambiar Imagen de Fondo:</label>
+                                <input type="hidden" name="id" value="@Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value" />
+                                <input type="file" name="fileFondo" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            </div>
+                            </div>
 
-                    <!-- Contenedor principal del pop-up -->
-                    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                      <!-- Encabezado del pop-up -->
-                      <div class="bg-gray-200 px-4 py-3 border-b border-gray-300">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Ingrese una imagen de fondo</h3>
-                      </div>
-
-                      <!-- Cuerpo del pop-up -->
-                      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <!-- Input para ingresar el nombre -->
-                        <div class="mb-4">
-                          <label for="nombre" class="block text-gray-700 font-bold mb-2">URL Imagen:</label>
-                          <input type="text" id="nombre" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <!-- Pie del pop-up -->
+                            <div class="bg-gray-100 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <!-- Botón para guardar el nombre -->
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">Guardar</button>
+                            <!-- Botón para cerrar el pop-up -->
+                            <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" onclick="cerrarPopup()">Cancelar</button>
+                            </div>
                         </div>
                       </div>
-
-                      <!-- Pie del pop-up -->
-                      <div class="bg-gray-100 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <!-- Botón para guardar el nombre -->
-                        <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm" onclick="guardarNombre()">Guardar</button>
-                        <!-- Botón para cerrar el pop-up -->
-                        <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" onclick="cerrarPopup()">Cancelar</button>
-                      </div>
                     </div>
-                  </div>
-                </div>
-
+                </form>
             </div>
             <div class="top-auto bottom-0 left-0 right-0 w-full absolute pointer-events-none overflow-hidden h-70-px" style="transform: translateZ(0px)">
                 <svg class="absolute bottom-0 overflow-hidden" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" version="1.1" viewBox="0 0 2560 100" x="0" y="0">
@@ -71,7 +71,7 @@
                             <div class="w-full lg:w-3/12 px-4 lg:order-2 flex justify-center">
 
                                 <div class="relative">
-                                    <img src="@Model.artista.Imagen" class="shadow-xl rounded-full h-auto align-middle border-none absolute -m-16 -ml-20 lg:-ml-16 max-w-150-px"/>
+                                    <img src="@ViewData["PERFIL"]" class="shadow-xl rounded-full h-auto align-middle border-none absolute -m-16 -ml-20 lg:-ml-16 max-w-150-px"/>
                                     <a asp-controller="Artista" asp-action="EditarPerfilArtista" asp-route-idartista="@Model.artista.IdArtista" class="bg-indigo-600 rounded-full w-10 h-10 absolute bottom-0 right-0 mr-2 mb-2 flex items-center justify-center">
                                         <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
@@ -170,28 +170,28 @@
     }
 
     // Función para guardar el nombre ingresado en el input y cambiar el background
-    function guardarNombre() {
-        var nombre = document.getElementById("nombre").value;
+    //function guardarNombre() {
+    //    var nombre = document.getElementById("nombre").value;
 
-        var background = document.getElementById("background");
-        background.style.backgroundImage = "url(" + nombre + ")";
+    //    var background = document.getElementById("background");
+    //    background.style.backgroundImage = "url(" + nombre + ")";
 
-        // Guardar la nueva imagen de fondo en la sesión del usuario
-        sessionStorage.setItem("imagenDeFondo", background.style.backgroundImage);
+    //    // Guardar la nueva imagen de fondo en la sesión del usuario
+    //    sessionStorage.setItem("imagenDeFondo", background.style.backgroundImage);
 
-        cerrarPopup();
-    }
+    //    cerrarPopup();
+    //}
 
     // Función para cargar la imagen de fondo guardada en la sesión del usuario
-    function cargarImagenDeFondo() {
-        var imagenDeFondo = sessionStorage.getItem("imagenDeFondo");
-        if (imagenDeFondo) {
-            var background = document.getElementById("background");
-            background.style.backgroundImage = imagenDeFondo;
-        }
-    }
+    //function cargarImagenDeFondo() {
+    //    var imagenDeFondo = sessionStorage.getItem("imagenDeFondo");
+    //    if (imagenDeFondo) {
+    //        var background = document.getElementById("background");
+    //        background.style.backgroundImage = imagenDeFondo;
+    //    }
+    //}
 
     // Llamar a la función para cargar la imagen de fondo al cargar la página
-    cargarImagenDeFondo();
+    //cargarImagenDeFondo();
 </script>
 

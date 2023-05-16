@@ -2,7 +2,6 @@
 using Azure.Storage.Sas;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using ProyectoTienda2.Repositories;
 using ProyectoTienda2.Services;
 using PyoyectoNugetTienda;
 using System.Collections.Generic;

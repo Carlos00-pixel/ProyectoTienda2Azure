@@ -3,7 +3,6 @@ using Azure.Storage.Sas;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using ProyectoTienda2.Filters;
-using ProyectoTienda2.Repositories;
 using ProyectoTienda2.Services;
 using PyoyectoNugetTienda;
 using System.Drawing;
@@ -29,29 +28,35 @@ namespace ProyectoTienda2.Controllers
 
             DatosArtista artista = await this.service.DetailsArtistaAsync(idartista);
             ViewData["CONTARPRODUCT"] = artista.listaProductos.Count;
-            string blobName = HttpContext.User.FindFirst("Imagen").Value;
-            if (blobName != null)
+            ViewData["PERFIL"] = await this.serviceBlob.GetBlobAsync(this.containerName, artista.artista.Imagen);
+            ViewData["FOTOFONDO"] = await this.serviceBlob.GetBlobAsync(this.containerName, artista.artista.ImagenFondo);
+
+            foreach (InfoProducto c in artista.listaProductos)
             {
-                BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(containerName);
-                BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
-
-                BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                string blobName2 = c.Imagen;
+                if (blobName2 != null)
                 {
-                    BlobContainerName = containerName,
-                    BlobName = blobName,
-                    Resource = "b",
-                    StartsOn = DateTimeOffset.UtcNow,
-                    ExpiresOn = DateTime.UtcNow.AddHours(1),
-                };
+                    BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(this.containerName);
+                    BlobClient blobClient = blobContainerClient.GetBlobClient(blobName2);
 
-                sasBuilder.SetPermissions(BlobSasPermissions.Read);
-                var uri = blobClient.GenerateSasUri(sasBuilder);
-                ViewData["URI"] = uri;
+                    BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                    {
+                        BlobContainerName = this.containerName,
+                        BlobName = blobName2,
+                        Resource = "b",
+                        StartsOn = DateTimeOffset.UtcNow,
+                        ExpiresOn = DateTime.UtcNow.AddHours(1),
+                    };
+
+                    sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                    var uri = blobClient.GenerateSasUri(sasBuilder);
+                    c.Imagen = uri.ToString();
+                }
             }
             return View(artista);
         }
-
-        public async Task<IActionResult> PerfilArtista(int idartista, int? idInfoArteEliminado)
+        public async Task<IActionResult> PerfilArtista
+            (int idartista, int? idInfoArteEliminado)
         {
             DatosArtista artista = new DatosArtista();
 
@@ -62,51 +67,46 @@ namespace ProyectoTienda2.Controllers
 
             artista = await this.service.DetailsArtistaAsync(idartista);
             ViewData["CONTARPRODUCT"] = artista.listaProductos.Count;
-
-            string blobImagenArtist = HttpContext.User.FindFirst("Imagen").Value;
-            if (blobImagenArtist != null)
+            ViewData["PERFIL"] = await this.serviceBlob.GetBlobAsync(this.containerName, artista.artista.Imagen);
+            ViewData["FOTOFONDO"] = await this.serviceBlob.GetBlobAsync(this.containerName, artista.artista.ImagenFondo);
+            
+            foreach (InfoProducto c in artista.listaProductos)
             {
-                BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(this.containerName);
-                BlobClient blobClient = blobContainerClient.GetBlobClient(blobImagenArtist);
-
-                BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                string blobName = c.Imagen;
+                if (blobName != null)
                 {
-                    BlobContainerName = this.containerName,
-                    BlobName = blobImagenArtist,
-                    Resource = "a",
-                    StartsOn = DateTimeOffset.UtcNow,
-                    ExpiresOn = DateTime.UtcNow.AddHours(1),
-                };
+                    BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(this.containerName);
+                    BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
 
-                sasBuilder.SetPermissions(BlobSasPermissions.Read);
-                var uri = blobClient.GenerateSasUri(sasBuilder);
-                ViewData["URI"] = uri;
+                    BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                    {
+                        BlobContainerName = this.containerName,
+                        BlobName = blobName,
+                        Resource = "b",
+                        StartsOn = DateTimeOffset.UtcNow,
+                        ExpiresOn = DateTime.UtcNow.AddHours(1),
+                    };
+
+                    sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                    var uri = blobClient.GenerateSasUri(sasBuilder);
+                    c.Imagen = uri.ToString();
+                }
             }
 
-            //foreach (InfoProducto c in artista.listaProductos)
-            //{
-            //    string blobName = c.Imagen;
-            //    if (blobName != null)
-            //    {
-            //        BlobContainerClient blobContainerClient = await this.serviceBlob.GetContainerAsync(this.containerName);
-            //        BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
-
-            //        BlobSasBuilder sasBuilder = new BlobSasBuilder()
-            //        {
-            //            BlobContainerName = this.containerName,
-            //            BlobName = blobName ,
-            //            Resource = "b",
-            //            StartsOn = DateTimeOffset.UtcNow,
-            //            ExpiresOn = DateTime.UtcNow.AddHours(1),
-            //        };
-
-            //        sasBuilder.SetPermissions(BlobSasPermissions.Read);
-            //        var uri = blobClient.GenerateSasUri(sasBuilder);
-            //        c.Imagen = uri.ToString();
-            //    }
-            //}
-
             return View(artista);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PerfilArtista
+            (int idartista, IFormFile fileFondo)
+        {
+            string blobName = fileFondo.FileName;
+            using (Stream stream = fileFondo.OpenReadStream())
+            {
+                await this.serviceBlob.UploadBlobAsync(this.containerName, blobName, stream);
+            }
+            await this.service.CambiarImagenFondoAsync(idartista, blobName);
+            return RedirectToAction("PerfilArtista", new { idartista = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value) });
         }
 
         public async Task<IActionResult> EditarPerfilArtista(int idartista)
@@ -120,6 +120,7 @@ namespace ProyectoTienda2.Controllers
             (int idartista, string nombre, string apellidos, string nick, string descripcion,
             string email, IFormFile file)
         {
+            DatosArtista artista = new DatosArtista();
             string blobName = file.FileName;
             using (Stream stream = file.OpenReadStream())
             {
@@ -130,7 +131,7 @@ namespace ProyectoTienda2.Controllers
                 (idartista, nombre, apellidos, nick, descripcion,
                 email, blobName);
 
-            return View("PerfilArtista", new { idartista = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value) });
+            return RedirectToAction("PerfilArtista", new { idartista = idartista });
         }
 
         //[AuthorizeUsuarios]
